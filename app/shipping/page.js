@@ -84,7 +84,7 @@ export default function page() {
             <input 
                 type="text"  
                 {...register('city',{minLength:4,maxLength:16,required:true})} 
-                placeholder='Enter City Name' 
+                placeholder='Enter City' 
                 className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
             />
             {
@@ -100,7 +100,7 @@ export default function page() {
             <input 
                 type="text"  
                 {...register('state',{minLength:4,maxLength:10,required:true})} 
-                placeholder='Enter Full Name' 
+                placeholder='Enter State' 
                 className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
             />
             {
