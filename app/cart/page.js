@@ -3,10 +3,10 @@ import { useStore } from '../../store/storeData.js'
 import CartClient from '@/components/CartClient.jsx';
 import CartStages from '@/components/CartStages.jsx';
 async function getCartData(){
-  const baseUrl=process.env.BASE_URL || "http://loacalhost:3000"
+  const Url=process.env.BASE_URL || "http://loacalhost:3000"
   try{
 
-    const res=await fetch("http://localhost:3000/api/cart",{
+    const res=await fetch("https://ecoyaan-five.vercel.app/api/cart",{
     cache:'no-store'
     })
     if (!res.ok){
