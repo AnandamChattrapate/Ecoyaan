@@ -1,122 +1,153 @@
 'use client'
-import React from 'react'
-import {useForm} from 'react-hook-form'
+import React, { useState } from 'react'
 import { useRouter } from "next/navigation";
 import { useStore } from '@/store/storeData';
+import StickyBottomBar from '@/components/StickyBottomBar';
 
-export default function page() {
+export default function ShippingPage() {
+    const addresses = useStore(state => state.addresses)
+    const selectedAddressId = useStore(state => state.selectedAddressId)
+    const addAddress = useStore(state => state.addAddress)
+    const deleteAddress = useStore(state => state.deleteAddress)
+    const selectAddress = useStore(state => state.selectAddress)
+    const setCartState = useStore(state => state.setCartState) // ✅ FIXED
 
-    const {handleSubmit,register,formState:{errors}}=useForm()
+    const [showForm, setShowForm] = useState(false)
+    const [formData, setFormData] = useState({
+        fullName: '', email: '', phone: '', pincode: '', city: '', state: ''
+    })
 
-    const setAddressDetails = useStore(state => state.setAddressDetails)
-    const setCartState = useStore(state => state.setCartState)
-    const router=useRouter()
+    const router = useRouter()
 
-    const handleData=(data)=>{
-        console.log("Form data : ",data)
-        setAddressDetails(data)
-        setCartState('Payment Confirmation')
-        router.push('/payment')
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
-  return (
-    <div>
-        <form onSubmit={handleSubmit(handleData)} className="max-w-lg mx-auto p-6 bg-white shadow-md rounded space-y-4 sm:max-w-md md:max-w-lg lg:max-w-xl">
-            {/* Full Name, Email, Phone Number, PIN Code, City, and State. */}
-            <input 
-                type="text"  
-                {...register('fullName',{minLength:4,maxLength:30,required:true})} 
-                placeholder='Enter Full Name' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
+    const handleSubmit = (e) => {
+        e.preventDefault()
+
+        // Optional: add simple validation
+        if (!formData.fullName || !formData.phone) {
+            alert('Please fill required fields')
+            return
+        }
+
+        addAddress({ ...formData, id: Date.now() }) // ✅ ensure unique id
+        setShowForm(false)
+
+        setFormData({
+            fullName: '', email: '', phone: '', pincode: '', city: '', state: ''
+        })
+    }
+
+    const handleNext = () => {
+        if (selectedAddressId) {
+            setCartState('Payment Confirmation') // ✅ FIXED
+            router.push('/payment')
+        } else {
+            alert('Please select a shipping address')
+        }
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 pb-28">
+            <h1 className="text-2xl font-bold mb-6">Shipping Address</h1>
+
+            {/* Address List */}
+            <div className="space-y-3 mb-6">
+                {addresses.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8 border-2 border-dashed rounded-lg">
+                        No addresses saved yet. Add one below.
+                    </p>
+                ) : (
+                    addresses.map((addr) => (
+                        <div 
+                            key={addr.id}
+                            className={`border rounded-lg p-4 cursor-pointer transition-all
+                                ${selectedAddressId === addr.id 
+                                    ? 'border-green-500 bg-green-50' 
+                                    : 'border-gray-200'}`}
+                            onClick={() => selectAddress(addr.id)}
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold">{addr.fullName}</p>
+                                    <p className="text-sm text-gray-600">{addr.phone}</p>
+                                    <p className="text-sm mt-1">
+                                        {addr.city}, {addr.state} - {addr.pincode}
+                                    </p>
+                                </div>
+
+                                <button 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        deleteAddress(addr.id);
+                                    }}
+                                    className="text-red-500 text-sm px-2 py-1 hover:bg-red-50 rounded"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Add New Address Button */}
+            {!showForm && (
+                <button
+                    onClick={() => setShowForm(true)}
+                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-500 hover:border-green-500 hover:text-green-600 transition-colors mb-4"
+                >
+                    + Add New Address
+                </button>
+            )}
+
+            {/* Add Address Form */}
+            {showForm && (
+                <form onSubmit={handleSubmit} className="border rounded-lg p-4 bg-gray-50 mb-4">
+                    <h2 className="font-semibold mb-3">New Address</h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {['fullName','email','phone','pincode','city','state'].map((field) => (
+                            <input
+                                key={field}
+                                type={field === 'email' ? 'email' : 'text'}
+                                name={field}
+                                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                                className="border p-2 rounded w-full"
+                                value={formData[field]}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        ))}
+                    </div>
+
+                    <div className="flex gap-2 mt-3">
+                        <button 
+                            type="submit" 
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        >
+                            Save Address
+                        </button>
+
+                        <button 
+                            type="button" 
+                            onClick={() => setShowForm(false)} 
+                            className="border px-4 py-2 rounded hover:bg-gray-100"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {/* Sticky Bottom Bar */}
+            <StickyBottomBar 
+                onBack={() => router.push('/cart')}
+                onNext={handleNext}
+                nextText="Continue to Payment"
             />
-            {
-                errors.fullName?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> Full Name Required !!</p>
-            }
-            {
-                errors.fullName?.type=='minLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> minimum length should be 4 !!</p>
-            }
-            {
-                errors.fullName?.type=='maxLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> maximum length should be 30 !!</p>
-            }
-            {/* email */}
-            <input 
-                type="email"  
-                {...register('email',{required:true})} 
-                placeholder='Enter email' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
-            />
-            {
-                errors.email?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> Email Required !!</p>
-            }
-            {/* phone number */}
-            <input 
-                type="tel"  
-                {...register('phone',{minLength:10,maxLength:10,required:true})} 
-                placeholder='Enter mobile Number' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
-            />
-            {
-                errors.phone?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> Mobile Number Required !!</p>
-            }
-            {
-                errors.phone?.type=='minLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> minimum length should be 10 !!</p>
-            }
-            {
-                errors.phone?.type=='maxLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> maximum length should be 10 !!</p>
-            }
-            {/* pincode */}
-            <input 
-                type="text"  
-                {...register('pincode',{minLength:6,maxLength:6,required:true})} 
-                placeholder='Enter Pincode' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
-            />
-            {
-                errors.pincode?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> Pincode Required !!</p>
-            }
-            {
-                errors.pincode?.type=='minLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> minimum length should be 6 !!</p>
-            }
-            {
-                errors.pincode?.type=='maxLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> maximum length should be 6 !!</p>
-            }
-            {/* city */}
-            <input 
-                type="text"  
-                {...register('city',{minLength:4,maxLength:16,required:true})} 
-                placeholder='Enter City' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
-            />
-            {
-                errors.city?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> City Name Required !!</p>
-            }
-            {
-                errors.city?.type=='minLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> minimum length should be 4 !!</p>
-            }
-            {
-                errors.city?.type=='maxLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> maximum length should be 16 !!</p>
-            }
-            {/* state */}
-            <input 
-                type="text"  
-                {...register('state',{minLength:4,maxLength:10,required:true})} 
-                placeholder='Enter State' 
-                className="border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 text"
-            />
-            {
-                errors.state?.type=='undefined' && <p className='bg-red-500 text-white text-sm p-1 rounded'> State Required !!</p>
-            }
-            {
-                errors.state?.type=='minLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> minimum length should be 4 !!</p>
-            }
-            {
-                errors.state?.type=='maxLength' && <p className='bg-red-500 text-white text-sm p-1 rounded'> maximum length should be 16 !!</p>
-            }
-            <button 
-                type='submit' 
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition type">Submit
-            </button>
-        </form>
-    </div>
-  )
+        </div>
+    )
 }

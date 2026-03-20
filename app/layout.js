@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+// import Footer from "@/components/Footer";
 import './globals.css'
 export const metadata = {
   title: "Ecoyaan",
@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
       <body>
         <Header/>
         {children}
-        <Footer/>
+        {/* <Footer/> */}
       </body>
     </html>
   );
